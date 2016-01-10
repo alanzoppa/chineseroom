@@ -35,7 +35,10 @@ class Tweet(models.Model):
 
     @classmethod
     def gather_for_user(self, username):
-        while Tweet.gather_older_for_user(username, Tweet.oldest_for_user(username)):
+        while Tweet.gather_older_for_user(
+                username,
+                Tweet.oldest_for_user(username)
+        ):
             pass
 
     @classmethod
@@ -104,5 +107,6 @@ class Parser:
     @classmethod
     def twitter_parse(self, text):
         return [
-            Parser.twitter_transform_sentence(sentence) for sentence in nltk.sent_tokenize(text)
+            Parser.twitter_transform_sentence(sentence)
+            for sentence in nltk.sent_tokenize(text)
         ]

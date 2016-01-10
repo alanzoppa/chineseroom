@@ -22,7 +22,10 @@ class TwitterApiTest(TransactionTestCase):
 
 
     def test_gather_for_user(self):
-        with vcr.use_cassette('tweets/vcr_cassettes/page_in_history.yml', record_mode='new_episodes'):
+        with vcr.use_cassette(
+                'tweets/vcr_cassettes/page_in_history.yml',
+                record_mode='new_episodes'
+        ):
             Tweet.gather_for_user('c_alan_zoppa')
         assert Tweet.objects.count() == 315
 
