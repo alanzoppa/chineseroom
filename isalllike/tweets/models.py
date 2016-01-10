@@ -6,6 +6,7 @@ from django.db import transaction
 
 import ipdb
 import nltk
+from nltk.util import ngrams
 
 # Create your models here.
 
@@ -66,19 +67,48 @@ class Tweet(models.Model):
 
 
 class NGram(models.Model):
-    one = models.CharField(max_length=255,)
-    two = models.CharField(max_length=255, null=True)
-    three = models.CharField(max_length=255, null=True)
+    token_one = models.CharField(max_length=255,)
+    token_two = models.CharField(max_length=255, null=True)
+    token_three = models.CharField(max_length=255, null=True)
+
+    tag_one = models.CharField(max_length=255,)
+    tag_two = models.CharField(max_length=255, null=True)
+    tag_three = models.CharField(max_length=255, null=True)
+
     source = models.CharField(max_length=255,)
 
-    @classmethod
-    def generate_from(self, text):
-        sentences = nltk.sent_tokenize(text)
-        sentences = [nltk.word_tokenize(s) for s in sentences]
+    def __str__(self):
+        return (
+            "<NGram {0.source}: ["
+            "({0.token_one}, {0.tag_one}), "
+            "({0.token_two}, {0.tag_two}), "
+            "({0.token_three}, {0.tag_three})"
+            "]>"
+        ).format(self)
 
-import ipdb
-class Parser:
     @classmethod
+    def params_from_list(self, list_of_3_parsed_tokens, user):
+        return {
+            'token_one': list_of_3_parsed_tokens[0][0],
+            'token_two': list_of_3_parsed_tokens[1][0],
+            'token_three': list_of_3_parsed_tokens[2][0],
+            'tag_one': list_of_3_parsed_tokens[0][1],
+            'tag_two': list_of_3_parsed_tokens[1][1],
+            'tag_three': list_of_3_parsed_tokens[2][1], 
+            'source': user+'@twitter'
+        }
+
+
+    @classmethod
+    def new_ngrams_from_twitter_sentences(self, lists_of_parsed_sentences, username):
+        with transaction.atomic():
+            for ps in lists_of_parsed_sentences:
+                for ngram in ngrams(ps, 3):
+                    NGram.objects.create(**self.params_from_list(ngram, username))
+
+
+class Parser:
+    @classmethod 
     def merge_leading_chars(self, text, characters): 
         def handle_chars(already, new):
             if already == []:
@@ -95,6 +125,12 @@ class Parser:
             return already 
         return reduce(handle_chars, text, [])
 
+    # Accepts
+    # [ ('@', 'whatever'), ('word', 'pos_tag'), ]
+    #
+    # Returns
+    # [ ('@word', '@+pos_tag'), ]
+
     @classmethod
     def twitter_transform_sentence(self, sentence):
         return Parser.merge_leading_chars(
@@ -103,6 +139,12 @@ class Parser:
             ),
             ('@', '#')
         )
+
+    # Accepts
+    # "@lorem ipsum. Dolor sit amet."
+    #
+    # Returns
+    # [ ('@word', '@+pos_tag'), ... ]
 
     @classmethod
     def twitter_parse(self, text):

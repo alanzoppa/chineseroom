@@ -70,3 +70,62 @@ class ParserSimpleTest(SimpleTestCase):
 
         assert output == expected
         assert Parser.twitter_parse(test_string) == [expected]
+
+
+class TwitterNGramTest(TransactionTestCase):
+
+    def setUp(self):
+        self.twitter_sentence = [
+            ('@herbert', '@+NN'),
+            ('this', 'DT'),
+            ('is', 'VBZ'),
+            ('a', 'DT'),
+            ('#message', '#+NN'),
+            ('for', 'IN'),
+            ('#you', '#+PRP')
+        ]
+
+    def test_params_from_list(self):
+        params = NGram.params_from_list(
+            [
+                ('@herbert', '@+NN'),
+                ('this', 'DT'),
+                ('is', 'VBZ'),
+            ],
+            'c_alan_zoppa'
+        )
+
+        assert params == {
+            'tag_one': '@+NN',
+            'token_three': 'is',
+            'source': 'c_alan_zoppa@twitter',
+            'token_one': '@herbert',
+            'tag_two': 'DT',
+            'tag_three': 'VBZ',
+            'token_two': 'this'
+        }
+
+    def test_ngramify_twitter_sentence(self):
+        NGram.new_ngrams_from_twitter_sentences([self.twitter_sentence], 'c_alan_zoppa')
+        first = NGram.objects.first()
+        assert NGram.objects.count() == 5
+        assert first.token_one == '@herbert'
+        assert first.token_two == 'this'
+        assert first.token_three == 'is'
+        assert first.tag_one == '@+NN'
+        assert first.tag_two == 'DT'
+        assert first.tag_three == 'VBZ'
+        assert first.source == 'c_alan_zoppa@twitter'
+
+
+    #def test_new_ngrams_from_twitter(self):
+
+    #expected = [
+    #('@herbert', '@+NN'),
+    #('this', 'DT'),
+    #('is', 'VBZ'),
+    #('a', 'DT'),
+    #('#message', '#+NN'),
+    #('for', 'IN'),
+    #('#you', '#+PRP')
+ 
