@@ -1,8 +1,11 @@
+from functools import reduce
+
 from django.db import models
 from django.conf import settings
 from django.db import transaction
 
 import ipdb
+import nltk
 
 # Create your models here.
 
@@ -57,3 +60,49 @@ class Tweet(models.Model):
                     twitter_id=t['id']
                 )
         return True
+
+
+class NGram(models.Model):
+    one = models.CharField(max_length=255,)
+    two = models.CharField(max_length=255, null=True)
+    three = models.CharField(max_length=255, null=True)
+    source = models.CharField(max_length=255,)
+
+    @classmethod
+    def generate_from(self, text):
+        sentences = nltk.sent_tokenize(text)
+        sentences = [nltk.word_tokenize(s) for s in sentences]
+
+import ipdb
+class Parser:
+    @classmethod
+    def merge_leading_chars(self, text, characters): 
+        def handle_chars(already, new):
+            if already == []:
+                return [new]
+            if already[-1][0] in characters:
+                char = already[-1][0]
+                munged = (
+                    "{old}{new}".format(old=char, new=new[0]),
+                    "{old}+{pos}".format(old=char, pos=new[1])
+                )
+                already[-1] = munged
+            else:
+                already.append(new)
+            return already 
+        return reduce(handle_chars, text, [])
+
+    @classmethod
+    def twitter_transform_sentence(self, sentence):
+        return Parser.merge_leading_chars(
+            nltk.pos_tag(
+                nltk.word_tokenize(sentence)
+            ),
+            ('@', '#')
+        )
+
+    @classmethod
+    def twitter_parse(self, text):
+        return [
+            Parser.twitter_transform_sentence(sentence) for sentence in nltk.sent_tokenize(text)
+        ]
