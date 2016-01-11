@@ -86,7 +86,7 @@ class TwitterNGramTest(TransactionTestCase):
         ]
 
     def test_params_from_list(self):
-        params = NGram.params_from_list(
+        params = NGram._params_from_list(
             [
                 ('@herbert', '@+NN'),
                 ('this', 'DT'),

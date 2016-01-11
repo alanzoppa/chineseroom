@@ -87,7 +87,7 @@ class NGram(models.Model):
         ).format(self)
 
     @classmethod
-    def params_from_list(self, list_of_3_parsed_tokens, user):
+    def _params_from_list(self, list_of_3_parsed_tokens, user):
         return {
             'token_one': list_of_3_parsed_tokens[0][0],
             'token_two': list_of_3_parsed_tokens[1][0],
@@ -100,11 +100,13 @@ class NGram(models.Model):
 
 
     @classmethod
-    def new_ngrams_from_twitter_sentences(self, lists_of_parsed_sentences, username):
+    def new_ngrams_from_twitter_sentences(self, parsed_sentences, username):
         with transaction.atomic():
-            for ps in lists_of_parsed_sentences:
+            for ps in parsed_sentences:
                 for ngram in ngrams(ps, 3):
-                    NGram.objects.create(**self.params_from_list(ngram, username))
+                    NGram.objects.create(
+                        **self._params_from_list(ngram, username)
+                    )
 
 
 class Parser:
