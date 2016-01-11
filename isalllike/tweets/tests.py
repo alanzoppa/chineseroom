@@ -125,4 +125,4 @@ class EndToEndGatherTest(TransactionTestCase):
                 record_mode='new_episodes'
         ):
             Tweet.gather_history_for('c_alan_zoppa') 
-        ipdb.set_trace()
+        assert NGram.objects.count() == 1152
