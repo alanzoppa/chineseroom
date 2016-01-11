@@ -10,9 +10,16 @@ import ipdb
 import nltk
 from nltk.util import ngrams
 
-# Create your models here.
-
 from TwitterAPI import TwitterAPI
+
+NO_LEADING_SPACE_TOKENS = [
+    '.', ',', '!', '?', ':', ';', '"', "'", "n't", "'d", "'s", ')',
+    "'ll", "'m", "'ve", "'re",
+]
+
+NO_TRAILING_SPACE_TOKENS = ['(', '@', ]
+
+
 
 api = TwitterAPI(**settings.TWITTER_AUTHENTICATION)
 
@@ -97,6 +104,7 @@ class NGram(models.Model):
     source = models.CharField(max_length=255,)
 
     sentence_starter = models.BooleanField(default=False)
+    sentence_terminator = models.BooleanField(default=False)
 
     def __str__(self):
         return (
@@ -108,29 +116,35 @@ class NGram(models.Model):
         ).format(self)
 
     @classmethod
-    def _params_from_list(self, three_parsed_tokens, user, sentence_starter):
-        return {
+    def _params_from_list(self, *args, **kwargs):
+        three_parsed_tokens = args[0]
+        base = {
             'token_one': three_parsed_tokens[0][0],
             'token_two': three_parsed_tokens[1][0],
             'token_three': three_parsed_tokens[2][0],
             'tag_one': three_parsed_tokens[0][1],
             'tag_two': three_parsed_tokens[1][1],
             'tag_three': three_parsed_tokens[2][1], 
-            'source': user+'@twitter',
-            'sentence_starter': sentence_starter
         }
+        base.update(kwargs)
+        return base
 
 
     @classmethod
     def new_ngrams_from_twitter_sentences(self, parsed_sentences, username):
         with transaction.atomic():
             for ps in parsed_sentences:
-                sentence_starter = True
-                for ngram in ngrams(ps, 3):
+                sentence_ngrams = [n for n in ngrams(ps,3)]
+                final_ngram_index = len(sentence_ngrams)-1
+                for i, ngram in enumerate(sentence_ngrams):
                     NGram.objects.create(
-                        **self._params_from_list(ngram, username, sentence_starter)
+                        **self._params_from_list(
+                            ngram,
+                            source=username+'@twitter',
+                            sentence_starter=(i == 0),
+                            sentence_terminator=(i == final_ngram_index)
+                            )
                     )
-                    sentence_starter = False
 
 
 class Parser:
@@ -178,14 +192,41 @@ class Parser:
         ]
 
 
-class NovelSentence:
-    def __init__(username):
-        self.username = username
+class NovelParagraph:
+    def __init__(self, ngram_groups):
+        self.events = []
+        self.ngram_groups = ngram_groups
+        self.sentences = []
 
+    def append_sentence(self):
+        self.current_sentence = []
+        starter = self.ngram_groups[0].filter(sentence_starter=True).order_by('?').first()
+        self.current_sentence.append(starter.token_one)
+        self.current_sentence.append(starter.token_two)
+        self.current_sentence.append(starter.token_three)
+        while self.current_sentence[-1] not in ['.', '!', '?']:
+            new_word = self.new_word()
+            self.current_sentence.append(new_word)
+        self.sentences.append(self.current_sentence)
 
+    def new_word(self):
+        nxt = self.ngram_groups[0].filter(
+            token_one__iexact=self.current_sentence[-2],
+            token_two__iexact=self.current_sentence[-1],
+        ).order_by('?').first()
+        if nxt:
+            return nxt.token_three
+        else:
+            return '.'
 
-
-
-
-
-
+    def human_readable_sentences(self):
+        output = []
+        for sentence in self.sentences:
+            for i, token in enumerate(sentence):
+                if \
+                        i != 0 and \
+                        sentence[i-1] not in NO_TRAILING_SPACE_TOKENS and \
+                        sentence[i] not in NO_LEADING_SPACE_TOKENS:
+                    output.append(' ')
+                output.append(token)
+        return ''.join(output)

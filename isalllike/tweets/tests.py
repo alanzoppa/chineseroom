@@ -1,6 +1,6 @@
 from django.test import TestCase, TransactionTestCase, SimpleTestCase
 import vcr
-from .models import Tweet, NGram, Parser
+from .models import Tweet, NGram, Parser, NovelParagraph
 
 import ipdb
 
@@ -92,23 +92,25 @@ class TwitterNGramTest(TransactionTestCase):
                 ('this', 'DT'),
                 ('is', 'VBZ'),
             ],
-            'c_alan_zoppa',
-            True
+            source='c_alan_zoppa@twitter',
+            sentence_starter=True,
+            sentence_terminator=False
         )
 
         assert params == {
-            'tag_one': '@+NN',
-            'token_three': 'is',
-            'source': 'c_alan_zoppa@twitter',
-            'token_one': '@herbert',
             'tag_two': 'DT',
-            'tag_three': 'VBZ',
+            'sentence_starter': True,
             'token_two': 'this',
-            'sentence_starter': True
+            'tag_one': '@+NN',
+            'token_one': '@herbert',
+            'tag_three': 'VBZ',
+            'source': 'c_alan_zoppa@twitter',
+            'token_three': 'is',
+            'sentence_terminator': False
         }
 
     def test_ngramify_twitter_sentence(self):
-        NGram.new_ngrams_from_twitter_sentences([self.twitter_sentence], 'c_alan_zoppa')
+        NGram.new_ngrams_from_twitter_sentences( [self.twitter_sentence],'c_alan_zoppa')
         first = NGram.objects.first()
         assert NGram.objects.count() == 5
         assert first.token_one == '@herbert'
@@ -128,3 +130,22 @@ class EndToEndGatherTest(TransactionTestCase):
         ):
             Tweet.gather_history_for('c_alan_zoppa') 
         assert NGram.objects.count() == 1152
+
+
+class NovelParagraphTests(TransactionTestCase):
+    def setUp(self):
+        sentence = Parser.twitter_parse(
+            "The quick brown fox jumped over a lazy dog #blessed"
+        )
+        NGram.new_ngrams_from_twitter_sentences(sentence, 'fake_user')
+
+    def test_end_sentence_marker(self):
+        last = NGram.objects.get(token_three='#blessed')
+        assert last.sentence_terminator
+
+    def test_basics(self):
+        n=NovelParagraph([NGram.objects.all()])
+        n.append_sentence()
+        assert n.human_readable_sentences() == (
+            "The quick brown fox jumped over a lazy dog #blessed."
+        )
