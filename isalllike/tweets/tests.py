@@ -138,20 +138,28 @@ class NovelParagraphTests(TransactionTestCase):
             "The quick brown fox jumped over a lazy dog #blessed"
         )
         NGram.new_ngrams_from_twitter_sentences(sentence, 'fake_user')
+        sentence = Parser.twitter_parse(
+            "As if one could kill time without injuring eternity."
+        )
+        NGram.new_ngrams_from_twitter_sentences(sentence, 'hd_thoreau')
 
     def test_start_sentence_marker(self):
         first = NGram.objects.get(token_one='The')
         assert first.sentence_starter
-
-
 
     def test_end_sentence_marker(self):
         last = NGram.objects.get(token_three='#blessed')
         assert last.sentence_terminator
 
     def test_basics(self):
-        n=NovelParagraph([NGram.objects.all()])
-        n.append_sentence()
-        assert n.human_readable_sentences() == (
+        nov = NovelParagraph(('fake_user@twitter', 1))
+        nov.append_sentence()
+        assert nov.human_readable_sentences() == (
             "The quick brown fox jumped over a lazy dog #blessed."
         )
+
+    def test_compound(self):
+        nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
+        nov.append_sentence()
+        nov.append_sentence()
+        print(nov.human_readable_sentences())

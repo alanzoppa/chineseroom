@@ -1,6 +1,7 @@
 from functools import reduce
 
 from multiprocessing import Pool
+from random import shuffle
 
 from django.db import models
 from django.conf import settings
@@ -9,6 +10,8 @@ from django.db import transaction
 import ipdb
 import nltk
 from nltk.util import ngrams
+from nltk.probability import DictionaryProbDist
+
 
 from TwitterAPI import TwitterAPI
 
@@ -193,14 +196,24 @@ class Parser:
 
 
 class NovelParagraph:
-    def __init__(self, ngram_groups):
+    def __init__(self, *args):
         self.events = []
-        self.ngram_groups = ngram_groups
         self.sentences = []
+        self.source_probability = {}
+        self.querysets = {}
+        self.sources = []
+        for source, probability in args:
+            self.source_probability[source] = probability
+            self.querysets[source] = NGram.objects.filter(source=source)
+            self.sources.append(source)
+        self.source_probability = DictionaryProbDist(self.source_probability)
+
+    def pick_queryset(self):
+        return self.querysets[self.source_probability.generate()]
 
     def append_sentence(self):
         self.current_sentence = []
-        starter = self.ngram_groups[0].filter(sentence_starter=True).order_by('?').first()
+        starter = self.pick_queryset().filter(sentence_starter=True).order_by('?').first()
         self.current_sentence.append(starter.token_one)
         self.current_sentence.append(starter.token_two)
         self.current_sentence.append(starter.token_three)
@@ -209,19 +222,38 @@ class NovelParagraph:
             self.current_sentence.append(new_word)
         self.sentences.append(self.current_sentence)
 
+    def _get_others(self, original):
+        sources = self.sources.copy()
+        sources.remove(original)
+        return [NGram.objects.filter(source=source) for source in sources]
+
     def new_word(self):
-        nxt = self.ngram_groups[0].filter(
+        queryset = self.pick_queryset()
+        ordered_querysets = [queryset]
+
+        if len(self.sources) > 1:
+            ordered_querysets = ordered_querysets + self._get_others(queryset.first().source)
+
+        for qs in ordered_querysets:
+            new_word = self.new_word_from_queryset(qs)
+            if new_word:
+                return new_word
+        return '.'
+
+    def new_word_from_queryset(self, queryset):
+        nxt = queryset.filter(
             token_one__iexact=self.current_sentence[-2],
             token_two__iexact=self.current_sentence[-1],
         ).order_by('?').first()
         if nxt:
             return nxt.token_three
         else:
-            return '.'
+            return None
 
     def human_readable_sentences(self):
-        output = []
+        final_output = []
         for sentence in self.sentences:
+            output = []
             for i, token in enumerate(sentence):
                 if \
                         i != 0 and \
@@ -229,4 +261,5 @@ class NovelParagraph:
                         sentence[i] not in NO_LEADING_SPACE_TOKENS:
                     output.append(' ')
                 output.append(token)
-        return ''.join(output)
+            final_output.append(''.join(output))
+        return ' '.join(final_output)
