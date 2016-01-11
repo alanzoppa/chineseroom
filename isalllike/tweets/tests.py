@@ -31,7 +31,7 @@ class TwitterApiTest(TransactionTestCase):
 
 class ParserSimpleTest(SimpleTestCase):
     def test_merge_leading_chars(self):
-        merged = Parser.merge_leading_chars([
+        merged = Parser._merge_leading_chars([
             ('@', 'AAA'),
             ('herbert', 'CCC'),
             ('this', 'AAA'),
@@ -56,7 +56,7 @@ class ParserSimpleTest(SimpleTestCase):
 
     def test_twitter_parse(self):
         test_string = '@herbert this is a #message for #you'
-        output = Parser.twitter_transform_sentence(test_string)
+        output = Parser._twitter_transform_sentence(test_string)
 
         expected = [
             ('@herbert', '@+NN'),
@@ -116,16 +116,3 @@ class TwitterNGramTest(TransactionTestCase):
         assert first.tag_two == 'DT'
         assert first.tag_three == 'VBZ'
         assert first.source == 'c_alan_zoppa@twitter'
-
-
-    #def test_new_ngrams_from_twitter(self):
-
-    #expected = [
-    #('@herbert', '@+NN'),
-    #('this', 'DT'),
-    #('is', 'VBZ'),
-    #('a', 'DT'),
-    #('#message', '#+NN'),
-    #('for', 'IN'),
-    #('#you', '#+PRP')
- 

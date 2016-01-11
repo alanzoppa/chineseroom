@@ -109,7 +109,7 @@ class NGram(models.Model):
 
 class Parser:
     @classmethod 
-    def merge_leading_chars(self, text, characters): 
+    def _merge_leading_chars(self, text, characters): 
         def handle_chars(already, new):
             if already == []:
                 return [new]
@@ -130,10 +130,9 @@ class Parser:
     #
     # Returns
     # [ ('@word', '@+pos_tag'), ]
-
     @classmethod
-    def twitter_transform_sentence(self, sentence):
-        return Parser.merge_leading_chars(
+    def _twitter_transform_sentence(self, sentence):
+        return Parser._merge_leading_chars(
             nltk.pos_tag(
                 nltk.word_tokenize(sentence)
             ),
@@ -145,10 +144,9 @@ class Parser:
     #
     # Returns
     # [ ('@word', '@+pos_tag'), ... ]
-
     @classmethod
     def twitter_parse(self, text):
         return [
-            Parser.twitter_transform_sentence(sentence)
+            Parser._twitter_transform_sentence(sentence)
             for sentence in nltk.sent_tokenize(text)
         ]
