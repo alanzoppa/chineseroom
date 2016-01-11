@@ -116,3 +116,13 @@ class TwitterNGramTest(TransactionTestCase):
         assert first.tag_two == 'DT'
         assert first.tag_three == 'VBZ'
         assert first.source == 'c_alan_zoppa@twitter'
+
+
+class EndToEndGatherTest(TransactionTestCase):
+    def test_gather_history_for(self):
+        with vcr.use_cassette(
+                'tweets/vcr_cassettes/page_in_history.yml',
+                record_mode='new_episodes'
+        ):
+            Tweet.gather_history_for('c_alan_zoppa') 
+        ipdb.set_trace()

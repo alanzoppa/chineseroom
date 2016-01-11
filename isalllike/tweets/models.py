@@ -65,6 +65,15 @@ class Tweet(models.Model):
                 )
         return True
 
+    @classmethod
+    def gather_history_for(self, username):
+        Tweet._gather_older_for_user(username)
+        for sentence in Tweet.objects.filter(user=username):
+            parsed_sentences = Parser.twitter_parse(sentence.message)
+            NGram.new_ngrams_from_twitter_sentences(
+                parsed_sentences, username
+            )
+
 
 class NGram(models.Model):
     token_one = models.CharField(max_length=255,)
