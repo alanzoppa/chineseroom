@@ -139,6 +139,12 @@ class NovelParagraphTests(TransactionTestCase):
         )
         NGram.new_ngrams_from_twitter_sentences(sentence, 'fake_user')
 
+    def test_start_sentence_marker(self):
+        first = NGram.objects.get(token_one='The')
+        assert first.sentence_starter
+
+
+
     def test_end_sentence_marker(self):
         last = NGram.objects.get(token_three='#blessed')
         assert last.sentence_terminator
