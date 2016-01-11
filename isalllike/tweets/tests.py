@@ -92,7 +92,8 @@ class TwitterNGramTest(TransactionTestCase):
                 ('this', 'DT'),
                 ('is', 'VBZ'),
             ],
-            'c_alan_zoppa'
+            'c_alan_zoppa',
+            True
         )
 
         assert params == {
@@ -102,7 +103,8 @@ class TwitterNGramTest(TransactionTestCase):
             'token_one': '@herbert',
             'tag_two': 'DT',
             'tag_three': 'VBZ',
-            'token_two': 'this'
+            'token_two': 'this',
+            'sentence_starter': True
         }
 
     def test_ngramify_twitter_sentence(self):

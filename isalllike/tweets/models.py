@@ -96,6 +96,8 @@ class NGram(models.Model):
 
     source = models.CharField(max_length=255,)
 
+    sentence_starter = models.BooleanField(default=False)
+
     def __str__(self):
         return (
             "<NGram {0.source}: ["
@@ -106,15 +108,16 @@ class NGram(models.Model):
         ).format(self)
 
     @classmethod
-    def _params_from_list(self, list_of_3_parsed_tokens, user):
+    def _params_from_list(self, three_parsed_tokens, user, sentence_starter):
         return {
-            'token_one': list_of_3_parsed_tokens[0][0],
-            'token_two': list_of_3_parsed_tokens[1][0],
-            'token_three': list_of_3_parsed_tokens[2][0],
-            'tag_one': list_of_3_parsed_tokens[0][1],
-            'tag_two': list_of_3_parsed_tokens[1][1],
-            'tag_three': list_of_3_parsed_tokens[2][1], 
-            'source': user+'@twitter'
+            'token_one': three_parsed_tokens[0][0],
+            'token_two': three_parsed_tokens[1][0],
+            'token_three': three_parsed_tokens[2][0],
+            'tag_one': three_parsed_tokens[0][1],
+            'tag_two': three_parsed_tokens[1][1],
+            'tag_three': three_parsed_tokens[2][1], 
+            'source': user+'@twitter',
+            'sentence_starter': sentence_starter
         }
 
 
@@ -122,10 +125,12 @@ class NGram(models.Model):
     def new_ngrams_from_twitter_sentences(self, parsed_sentences, username):
         with transaction.atomic():
             for ps in parsed_sentences:
+                sentence_starter = True
                 for ngram in ngrams(ps, 3):
                     NGram.objects.create(
-                        **self._params_from_list(ngram, username)
+                        **self._params_from_list(ngram, username, sentence_starter)
                     )
+                    sentence_starter = False
 
 
 class Parser:
@@ -171,3 +176,16 @@ class Parser:
             Parser._twitter_transform_sentence(sentence)
             for sentence in nltk.sent_tokenize(text)
         ]
+
+
+class NovelSentence:
+    def __init__(username):
+        self.username = username
+
+
+
+
+
+
+
+
