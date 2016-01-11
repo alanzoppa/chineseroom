@@ -27,7 +27,7 @@ class Tweet(models.Model):
 
 
     @classmethod
-    def oldest_for_user(self, username):
+    def _oldest_for_user(self, username):
         oldest_tweet = Tweet.objects.order_by('-twitter_id').last()
         if oldest_tweet:
             return oldest_tweet.twitter_id
@@ -35,15 +35,15 @@ class Tweet(models.Model):
             return None
 
     @classmethod
-    def gather_for_user(self, username):
-        while Tweet.gather_older_for_user(
+    def _gather_for_user(self, username):
+        while Tweet._gather_older_for_user(
                 username,
-                Tweet.oldest_for_user(username)
+                Tweet._oldest_for_user(username)
         ):
             pass
 
     @classmethod
-    def gather_older_for_user(self, username, before_this_id=None):
+    def _gather_older_for_user(self, username, before_this_id=None):
         params = {'count': 100, 'include_rts': False,}
         if before_this_id:
             params['max_id'] = str(before_this_id)
