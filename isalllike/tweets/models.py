@@ -1,5 +1,7 @@
 from functools import reduce
 
+from multiprocessing import Pool
+
 from django.db import models
 from django.conf import settings
 from django.db import transaction
@@ -68,11 +70,15 @@ class Tweet(models.Model):
     @classmethod
     def gather_history_for(self, username):
         Tweet._gather_older_for_user(username)
-        lists_of_messages = []
-        print('gathered tweets')
-        for sentence in Tweet.objects.filter(user=username):
-            lists_of_messages.append(Parser.twitter_parse(sentence.message))
-        print('parsed, saving now')
+
+        pool = Pool(processes=4)
+        lists_of_messages = pool.map(
+            Parser.twitter_parse,
+            [sentence.message
+             for sentence in Tweet.objects.filter(user=username)
+             ]
+        )
+
         for l in lists_of_messages:
             NGram.new_ngrams_from_twitter_sentences(
                 l, username
