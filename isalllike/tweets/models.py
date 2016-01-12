@@ -156,19 +156,17 @@ class Document(models.Model):
     name = models.CharField(max_length=255,)
     text = models.TextField()
 
-    #def rebuild_ngrams(self):
+    def rebuild_ngrams(self):
+        source_name = 'document:'+self.name
+        NGram.objects.filter(source=source_name).delete()
+        NGram.new_ngrams_from_parsed_sentences(
+            Parser.document_parse(self.text),
+            source_name
+        )
 
-        #for l in lists_of_messages:
-            #NGram.new_ngrams_from_parsed_sentences(
-                #l, username+'@twitter'
-            #)
-
-
-
-
-#@receiver(post_save, sender=Document)
-#def generate_document_ngrams(sender, **kwargs):
-    #kwargs['instance'].generate_ngrams() 
+@receiver(post_save, sender=Document)
+def generate_document_ngrams(sender, **kwargs):
+    kwargs['instance'].rebuild_ngrams() 
 
 
 class Parser:

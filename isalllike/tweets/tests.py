@@ -194,3 +194,18 @@ class DocumentTests(TransactionTestCase):
                 ('for', 'IN'), ('foxes', 'NNS'), ('.', '.')
             ]
         ]
+
+    def test_rebuild_ngrams_signal(self):
+        Document.objects.create(
+            name='arbitrary',
+            text="This is just to test the signal."
+        )
+        assert NGram.objects.filter(source='document:arbitrary').count() == 6
+
+    def test_rebuild_ngrams(self):
+        source_name = 'document:'+self.test_document.name
+        NGram.objects.filter(source=source_name).delete()
+        self.test_document.rebuild_ngrams()
+        assert NGram.objects.filter(source=source_name).count() == 32
+
+
