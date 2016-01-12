@@ -6,6 +6,8 @@ from random import shuffle
 from django.db import models
 from django.conf import settings
 from django.db import transaction
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
 import ipdb
 import nltk
@@ -90,8 +92,8 @@ class Tweet(models.Model):
         )
 
         for l in lists_of_messages:
-            NGram.new_ngrams_from_twitter_sentences(
-                l, username
+            NGram.new_ngrams_from_parsed_sentences(
+                l, username+'@twitter'
             )
 
 
@@ -134,7 +136,7 @@ class NGram(models.Model):
 
 
     @classmethod
-    def new_ngrams_from_twitter_sentences(self, parsed_sentences, username):
+    def new_ngrams_from_parsed_sentences(self, parsed_sentences, source):
         with transaction.atomic():
             for ps in parsed_sentences:
                 sentence_ngrams = [n for n in ngrams(ps,3)]
@@ -143,11 +145,30 @@ class NGram(models.Model):
                     NGram.objects.create(
                         **self._params_from_list(
                             ngram,
-                            source=username+'@twitter',
+                            source=source,
                             sentence_starter=(i == 0),
                             sentence_terminator=(i == final_ngram_index)
                             )
                     )
+
+
+class Document(models.Model):
+    name = models.CharField(max_length=255,)
+    text = models.TextField()
+
+    #def rebuild_ngrams(self):
+
+        #for l in lists_of_messages:
+            #NGram.new_ngrams_from_parsed_sentences(
+                #l, username+'@twitter'
+            #)
+
+
+
+
+#@receiver(post_save, sender=Document)
+#def generate_document_ngrams(sender, **kwargs):
+    #kwargs['instance'].generate_ngrams() 
 
 
 class Parser:
@@ -176,9 +197,7 @@ class Parser:
     @classmethod
     def _twitter_transform_sentence(self, sentence):
         return Parser._merge_leading_chars(
-            nltk.pos_tag(
-                nltk.word_tokenize(sentence)
-            ),
+            Parser.pos_tag_sentence(sentence),
             ('@', '#')
         )
 
@@ -193,6 +212,18 @@ class Parser:
             Parser._twitter_transform_sentence(sentence)
             for sentence in nltk.sent_tokenize(text)
         ]
+
+
+    @classmethod
+    def pos_tag_sentence(self, sentence):
+        return nltk.pos_tag(nltk.word_tokenize(sentence))
+
+    @classmethod
+    def document_parse(self, text):
+        return Pool(processes=4).map(
+            Parser.pos_tag_sentence,
+            nltk.sent_tokenize(text)
+        )
 
 
 class NovelParagraph:

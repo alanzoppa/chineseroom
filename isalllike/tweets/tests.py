@@ -1,6 +1,6 @@
 from django.test import TestCase, TransactionTestCase, SimpleTestCase
 import vcr
-from .models import Tweet, NGram, Parser, NovelParagraph
+from .models import Tweet, NGram, Parser, NovelParagraph, Document
 
 import ipdb
 
@@ -110,7 +110,7 @@ class TwitterNGramTest(TransactionTestCase):
         }
 
     def test_ngramify_twitter_sentence(self):
-        NGram.new_ngrams_from_twitter_sentences( [self.twitter_sentence],'c_alan_zoppa')
+        NGram.new_ngrams_from_parsed_sentences( [self.twitter_sentence],'c_alan_zoppa@twitter')
         first = NGram.objects.first()
         assert NGram.objects.count() == 5
         assert first.token_one == '@herbert'
@@ -137,11 +137,11 @@ class NovelParagraphTests(TransactionTestCase):
         sentence = Parser.twitter_parse(
             "The quick brown fox jumped over a lazy dog #blessed"
         )
-        NGram.new_ngrams_from_twitter_sentences(sentence, 'fake_user')
+        NGram.new_ngrams_from_parsed_sentences(sentence, 'fake_user@twitter')
         sentence = Parser.twitter_parse(
             "As if one could kill time without injuring eternity."
         )
-        NGram.new_ngrams_from_twitter_sentences(sentence, 'hd_thoreau')
+        NGram.new_ngrams_from_parsed_sentences(sentence, 'hd_thoreau@twitter')
 
     def test_start_sentence_marker(self):
         first = NGram.objects.get(token_one='The')
@@ -158,8 +158,39 @@ class NovelParagraphTests(TransactionTestCase):
             "The quick brown fox jumped over a lazy dog #blessed."
         )
 
-    def test_compound(self):
-        nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
-        nov.append_sentence()
-        nov.append_sentence()
-        print(nov.human_readable_sentences())
+    #def test_compound(self):
+        #nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
+        #nov.append_sentence()
+        #nov.append_sentence()
+        #print(nov.human_readable_sentences())
+
+
+class DocumentTests(TransactionTestCase):
+    def setUp(self):
+        self.test_document = Document.objects.create(
+            name='Psalm 63',
+            text=(
+                "But those that seek my soul, to destroy it, shall go into "
+                "the lower parts of the earth. They shall fall by the sword: "
+                "they shall be a portion for foxes."
+            )
+        )
+
+    def test_document_parse(self):
+        parsed = Parser.document_parse(self.test_document.text)
+        assert parsed == [
+            [
+                ('But', 'CC'), ('those', 'DT'), ('that', 'WDT'),
+                ('seek', 'VBP'), ('my', 'PRP$'), ('soul', 'NN'), (',', ','),
+                ('to', 'TO'), ('destroy', 'VB'), ('it', 'PRP'), (',', ','),
+                ('shall', 'MD'), ('go', 'VB'), ('into', 'IN'), ('the', 'DT'),
+                ('lower', 'JJR'), ('parts', 'NNS'), ('of', 'IN'),
+                ('the', 'DT'), ('earth', 'NN'), ('.', '.')
+            ],
+            [
+                ('They', 'PRP'), ('shall', 'MD'), ('fall', 'VB'), ('by', 'IN'),
+                ('the', 'DT'), ('sword', 'NN'), (':', ':'), ('they', 'PRP'),
+                ('shall', 'MD'), ('be', 'VB'), ('a', 'DT'), ('portion', 'NN'),
+                ('for', 'IN'), ('foxes', 'NNS'), ('.', '.')
+            ]
+        ]
