@@ -81,6 +81,7 @@ class Tweet(models.Model):
 
     @classmethod
     def gather_history_for(self, username):
+        NGram.objects.filter(source=username+"@twitter").delete()
         Tweet._gather_older_for_user(username)
 
         pool = Pool(processes=4)
@@ -142,7 +143,7 @@ class NGram(models.Model):
                 sentence_ngrams = [n for n in ngrams(ps,3)]
                 final_ngram_index = len(sentence_ngrams)-1
                 for i, ngram in enumerate(sentence_ngrams):
-                    NGram.objects.create(
+                    ngram=NGram.objects.create(
                         **self._params_from_list(
                             ngram,
                             source=source,
@@ -224,6 +225,10 @@ class Parser:
         )
 
 
+class InvalidSourceException(Exception):
+    pass
+
+
 class NovelParagraph:
     def __init__(self, *args):
         self.events = []
@@ -235,6 +240,8 @@ class NovelParagraph:
             self.source_probability[source] = probability
             self.querysets[source] = NGram.objects.filter(source=source)
             self.sources.append(source)
+            if self.querysets[source].count() == 0:
+                raise InvalidSourceException("No NGrams with this source")
         self.source_probability = DictionaryProbDist(self.source_probability)
 
     def pick_queryset(self):

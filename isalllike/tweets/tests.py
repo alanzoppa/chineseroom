@@ -1,6 +1,7 @@
 from django.test import TestCase, TransactionTestCase, SimpleTestCase
 import vcr
 from .models import Tweet, NGram, Parser, NovelParagraph, Document
+from .models import InvalidSourceException
 
 import ipdb
 
@@ -28,6 +29,10 @@ class TwitterApiTest(TransactionTestCase):
         ):
             Tweet._gather_for_user('c_alan_zoppa')
         assert Tweet.objects.count() == 315
+
+
+    #def test_gather_for_not_me(self):
+        #Tweet._gather_for_user('sa')
 
 class ParserSimpleTest(SimpleTestCase):
     def test_merge_leading_chars(self):
@@ -157,6 +162,15 @@ class NovelParagraphTests(TransactionTestCase):
         assert nov.human_readable_sentences() == (
             "The quick brown fox jumped over a lazy dog #blessed."
         )
+
+    def test_initialize_with_bad_data(self):
+        try:
+            nov = NovelParagraph(('invalid@twitter', 1))
+            passed = False
+        except InvalidSourceException:
+            passed = True
+        assert passed
+            
 
     #def test_compound(self):
         #nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
