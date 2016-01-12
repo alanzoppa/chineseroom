@@ -31,9 +31,6 @@ class TwitterApiTest(TransactionTestCase):
         assert Tweet.objects.count() == 315
 
 
-    #def test_gather_for_not_me(self):
-        #Tweet._gather_for_user('sa')
-
 class ParserSimpleTest(SimpleTestCase):
     def test_merge_leading_chars(self):
         merged = Parser._merge_leading_chars([
@@ -223,3 +220,25 @@ class DocumentTests(TransactionTestCase):
         assert NGram.objects.filter(source=source_name).count() == 32
 
 
+class SentencePostprocessing(TransactionTestCase):
+
+    def setUp(self):
+        example = (
+            "@joe has an example! Take a look; it's at "
+            "http://www.example.com. Hurry, or you'll miss it."
+        )
+
+        sentence = Parser.twitter_parse(example)
+        NGram.new_ngrams_from_parsed_sentences(sentence, 'fake_user@twitter')
+
+    def test_humanize_sentence(self):
+        nov = NovelParagraph(('fake_user@twitter', 1))
+        for i in range(0,100):
+            nov.append_sentence()
+        humanized = nov.human_readable_sentences()
+        for i in [
+            "@joe has an example!",
+            "Take a look; it's at http://www.example.com.",
+            "Hurry, or you'll miss it."
+        ]:
+            assert i in humanized

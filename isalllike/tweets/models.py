@@ -1,4 +1,5 @@
 from functools import reduce
+import re
 
 from multiprocessing import Pool
 from random import shuffle
@@ -24,7 +25,9 @@ NO_LEADING_SPACE_TOKENS = [
 
 NO_TRAILING_SPACE_TOKENS = ['(', '@', ]
 
-
+REGEX_REPLACEMENTS = [
+    (re.compile(r'(https?:) '), '\\1'),
+]
 
 api = TwitterAPI(**settings.TWITTER_AUTHENTICATION)
 
@@ -58,7 +61,7 @@ class Tweet(models.Model):
 
     @classmethod
     def _gather_older_for_user(self, username, before_this_id=None):
-        params = {'count': 100, 'include_rts': False,}
+        params = {'count': 100, 'include_rts': False, 'screen_name': username}
         if before_this_id:
             params['max_id'] = str(before_this_id)
         request = api.request('statuses/user_timeline', params)
@@ -298,4 +301,7 @@ class NovelParagraph:
                     output.append(' ')
                 output.append(token)
             final_output.append(''.join(output))
-        return ' '.join(final_output)
+        final_output = ' '.join(final_output)
+        for pattern, replacement in REGEX_REPLACEMENTS:
+            final_output = re.sub(pattern, replacement, final_output)
+        return final_output
