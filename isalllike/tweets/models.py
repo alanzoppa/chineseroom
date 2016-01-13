@@ -253,10 +253,10 @@ class NovelParagraph:
     def append_sentence(self):
         self.current_sentence = []
         starter = self.pick_queryset().filter(sentence_starter=True).order_by('?').first()
-        self.current_sentence.append(starter.token_one)
-        self.current_sentence.append(starter.token_two)
-        self.current_sentence.append(starter.token_three)
-        while self.current_sentence[-1] not in ['.', '!', '?']:
+        self.current_sentence.append((starter.token_one, starter.tag_one))
+        self.current_sentence.append((starter.token_two, starter.tag_two))
+        self.current_sentence.append((starter.token_three, starter.tag_three))
+        while self.current_sentence[-1][0] not in ['.', '!', '?']:
             new_word = self.new_word()
             self.current_sentence.append(new_word)
         self.sentences.append(self.current_sentence)
@@ -281,11 +281,11 @@ class NovelParagraph:
 
     def new_word_from_queryset(self, queryset):
         nxt = queryset.filter(
-            token_one__iexact=self.current_sentence[-2],
-            token_two__iexact=self.current_sentence[-1],
+            token_one__iexact=self.current_sentence[-2][0],
+            token_two__iexact=self.current_sentence[-1][0],
         ).order_by('?').first()
         if nxt:
-            return nxt.token_three
+            return (nxt.token_three, nxt.tag_three)
         else:
             return None
 
@@ -296,10 +296,10 @@ class NovelParagraph:
             for i, token in enumerate(sentence):
                 if \
                         i != 0 and \
-                        sentence[i-1] not in NO_TRAILING_SPACE_TOKENS and \
-                        sentence[i] not in NO_LEADING_SPACE_TOKENS:
+                        sentence[i-1][0] not in NO_TRAILING_SPACE_TOKENS and \
+                        sentence[i][0] not in NO_LEADING_SPACE_TOKENS:
                     output.append(' ')
-                output.append(token)
+                output.append(token[0])
             final_output.append(''.join(output))
         final_output = ' '.join(final_output)
         for pattern, replacement in REGEX_REPLACEMENTS:
