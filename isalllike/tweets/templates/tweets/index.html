@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<form action="/" method="post" id='create-run' class='modal-entry'>
+    {% csrf_token %}
+
+    <div id='totals'></div>
+    
+    {% for source in sources %}
+        <label for='source-{{source}}'>{{source}}</label>
+        <span id='int-source-{{source}}'></span>
+        <input min='0' max='100' type='range' id='source-{{source}}' name='source-{{source}}' value='0' class='source-slider' />
+    {% endfor %}
+    <input type="submit" value="Submit">
+
+    
+</form>
+{% endblock %}

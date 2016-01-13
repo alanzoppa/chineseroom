@@ -1,0 +1,86 @@
+body {
+}
+
+h1 {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+#nav {
+  background: #ccc;
+  padding: 7px;
+  margin-bottom: 20px;
+
+  #menu {
+    float: right;
+    li {
+      display: inline;
+    }
+  }
+}
+
+form#create-interview {
+  width: 500px;
+  margin-left: 20px;
+  color: #444;
+  label {
+    margin-top: 15px;
+  }
+  p {
+    label, input {display: block;}
+  }
+  p > label, .fake-label {
+    margin: 20px 0 5px;
+    font-weight: bold;
+  }
+
+  ul li {
+    display: inline;
+  }
+
+  .interview-fieldset {
+    h2 {
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+    }
+    margin-top: 15px;
+    border: 1px solid #ccc;
+    background: #eee;
+    padding: 10px;
+  }
+
+  .ui-slider {
+    width: 250px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 26px;
+
+    .ui-slider-handle {
+      width: 22px;
+      height: 40px;
+      text-align: center;
+      top: -21px;
+    }
+  }
+
+  .slider-parent {
+    margin-top: 15px;
+    margin-left: 2px;
+    margin-bottom: 30px;
+    & > div {
+      margin-left: 7px;
+    }
+  }
+  #id_interview_evaluation-rating, #id_interview_question-rating {
+    /*display: none;*/
+  }
+
+  /*#id_interview_evaluation-rating, #id_interview_question-rating {*/
+    /*label, input {display: block;}*/
+      /*li {*/
+        /*display: inline;*/
+      /*}*/
+    /*}*/
+  }
