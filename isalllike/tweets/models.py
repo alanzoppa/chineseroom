@@ -27,6 +27,7 @@ NO_TRAILING_SPACE_TOKENS = ['(', '@', ]
 
 REGEX_REPLACEMENTS = [
     (re.compile(r'(https?:) '), '\\1'),
+    (re.compile(r'(``|")[ ]?'), ''),
 ]
 
 api = TwitterAPI(**settings.TWITTER_AUTHENTICATION)
@@ -289,15 +290,22 @@ class NovelParagraph:
         else:
             return None
 
+    def _sentence_needs_space(self, token, previous_token, index):
+        if index == 0:
+            return False
+        if previous_token in NO_TRAILING_SPACE_TOKENS:
+            return False
+        if token in NO_LEADING_SPACE_TOKENS:
+            return False
+        return True
+
+
     def human_readable_sentences(self):
         final_output = []
         for sentence in self.sentences:
             output = []
             for i, token in enumerate(sentence):
-                if \
-                        i != 0 and \
-                        sentence[i-1][0] not in NO_TRAILING_SPACE_TOKENS and \
-                        sentence[i][0] not in NO_LEADING_SPACE_TOKENS:
+                if self._sentence_needs_space(sentence[i][0], sentence[i-1][0], i):
                     output.append(' ')
                 output.append(token[0])
             final_output.append(''.join(output))

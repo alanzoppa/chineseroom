@@ -2,6 +2,8 @@ from django.test import TestCase, TransactionTestCase, SimpleTestCase
 import vcr
 from .models import Tweet, NGram, Parser, NovelParagraph, Document
 from .models import InvalidSourceException
+from isalllike.tweets import views
+from django.http import QueryDict
 
 import ipdb
 
@@ -224,7 +226,7 @@ class SentencePostprocessing(TransactionTestCase):
 
     def setUp(self):
         example = (
-            "@joe has an example! Take a look; it's at "
+            "@joe `` has an \" example! Take a look; it's at "
             "http://www.example.com. Hurry, or you'll miss it."
         )
 
@@ -242,3 +244,21 @@ class SentencePostprocessing(TransactionTestCase):
             "Hurry, or you'll miss it."
         ]:
             assert i in humanized
+
+
+class ViewTests(TransactionTestCase):
+    def test_extract_probabilities(self):
+        post_data = QueryDict(
+            "csrfmiddlewaretoken=4gyNjAssiJBZ4aEOUr5EHTFFJkggI12i"
+            "&source-c_alan_zoppa%40twitter=0"
+            "&source-document%3AHarry+Potter+and+the+Chamber+of+Secrets=20"
+            "&source-document%3APsalms=80"
+            "&source-sapinker%40twitter=0"
+        )
+        generated = views._extract_probabilities(post_data)
+        for expected in [
+            ('document:Harry Potter and the Chamber of Secrets', 0.2),
+            ('document:Psalms', 0.8)
+        ]:
+            assert expected in generated
+        assert len(generated) == 2

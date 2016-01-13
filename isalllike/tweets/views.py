@@ -8,20 +8,26 @@ def index(request):
     context = {
         'sources': [n.source for n in NGram.objects.all().distinct('source')],
     }
-
-
     if request.method == 'POST':
-        #post_dictionary = copy(request.POST)
-        sources = filter(lambda x: x.startswith('source-'), request.POST)
-        sources = [(s[7:], int(request.POST[s])/100) for s in sources if request.POST[s] != '0']
-        paragraph = NovelParagraph(*sources)
-        paragraph.append_sentence()
-        paragraph.append_sentence()
-        paragraph.append_sentence()
-        context['sentences'] = paragraph.human_readable_sentences()
+        paragraph = NovelParagraph( *_extract_probabilities(request.POST) )
+        context['sentences'] = _generate_markov_string(paragraph)
 
     return render(
         request=request,
         template_name='tweets/index.html',
         context=context,
         )
+
+def _extract_probabilities(data):
+    prefix = 'source-'
+    sources = filter(lambda x: x.startswith(prefix), data)
+    return [
+        (s[len(prefix):], int(data[s])/100)
+        for s in sources if data[s] != '0'
+    ]
+
+def _generate_markov_string(novel_paragraph):
+    novel_paragraph.append_sentence()
+    novel_paragraph.append_sentence()
+    novel_paragraph.append_sentence()
+    return novel_paragraph.human_readable_sentences()
