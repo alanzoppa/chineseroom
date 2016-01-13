@@ -20,4 +20,10 @@ $(document).on('change', '.source-slider', function(e){
             function(){ $(this).attr('max', 100-total+parseInt(this.value)); }
             )
     $("#totals").html(total);
+    if (total == 100) { 
+        $('#submit-run').removeAttr('disabled');
+    }
+    else {
+        $('#submit-run').attr('disabled', 'disabled');
+    }
 });
