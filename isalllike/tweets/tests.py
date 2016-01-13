@@ -245,6 +245,16 @@ class SentencePostprocessing(TransactionTestCase):
         ]:
             assert i in humanized
 
+    #def test_reckon_quotations(self):
+        #sentences = [
+            #"I've had enough.",
+            #"said the actress to the bishop."
+        #]
+        #paragraph = Parser.twitter_parse(sentences)
+        #print(paragraph)
+        #NovelParagraph._reckon_quotations(sentences)
+
+
 
 class ViewTests(TransactionTestCase):
     def test_extract_probabilities(self):

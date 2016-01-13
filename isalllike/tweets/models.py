@@ -25,9 +25,10 @@ NO_LEADING_SPACE_TOKENS = [
 
 NO_TRAILING_SPACE_TOKENS = ['(', '@', ]
 
+UNUSABLE_TOKENS = ['``', '"']
+
 REGEX_REPLACEMENTS = [
     (re.compile(r'(https?:) '), '\\1'),
-    (re.compile(r'(``|")[ ]?'), ''),
 ]
 
 api = TwitterAPI(**settings.TWITTER_AUTHENTICATION)
@@ -290,7 +291,8 @@ class NovelParagraph:
         else:
             return None
 
-    def _sentence_needs_space(self, token, previous_token, index):
+    @classmethod
+    def _needs_space(self, token, previous_token, index):
         if index == 0:
             return False
         if previous_token in NO_TRAILING_SPACE_TOKENS:
@@ -299,17 +301,35 @@ class NovelParagraph:
             return False
         return True
 
+    #@classmethod
+    #def _reckon_quotations(self, sentences):
+        #for i, sentence in enumerate(sentences):
+            #if i == 0:
+                #continue
+            #if sentence[0] == sentence[0].lower():
+                #senvk
+
+    
+    @classmethod
+    def _join_and_postprocess_sentences(self, sentences):
+        sentences = [''.join(sentence) for sentence in sentences]
+        text = ' '.join(sentences)
+        for pattern, replacement in REGEX_REPLACEMENTS:
+            text = re.sub(pattern, replacement, text) 
+        return text 
+    
+    @classmethod
+    def _usable_token(self, token):
+        return token not in UNUSABLE_TOKENS
 
     def human_readable_sentences(self):
         final_output = []
-        for sentence in self.sentences:
+        for sent in self.sentences:
             output = []
-            for i, token in enumerate(sentence):
-                if self._sentence_needs_space(sentence[i][0], sentence[i-1][0], i):
-                    output.append(' ')
-                output.append(token[0])
-            final_output.append(''.join(output))
-        final_output = ' '.join(final_output)
-        for pattern, replacement in REGEX_REPLACEMENTS:
-            final_output = re.sub(pattern, replacement, final_output)
-        return final_output
+            for i, token in enumerate(sent):
+                if NovelParagraph._usable_token(token[0]):
+                    if NovelParagraph._needs_space(token[0], sent[i-1][0], i):
+                        output.append(' ')
+                    output.append(token[0])
+            final_output.append(output)
+        return NovelParagraph._join_and_postprocess_sentences(final_output)
