@@ -4,12 +4,16 @@
 <form action="/" method="post" id='create-run' class='modal-entry'>
     {% csrf_token %}
 
+    {% if sentences %}
+    <div id='sentences'>{{sentences}}</div>
+    {% endif %}
+
     <div id='totals'></div>
     
     {% for source in sources %}
         <label for='source-{{source}}'>{{source}}</label>
         <span id='int-source-{{source}}'></span>
-        <input min='0' max='100' type='range' id='source-{{source}}' name='source-{{source}}' value='0' class='source-slider' />
+        <input min='0' max='100' type='range' id='source-{{source}}' name='source-{{source}}' step='5' value='0' class='source-slider' />
     {% endfor %}
     <input type="submit" value="Submit" disabled='disabled' id='submit-run' />
 
