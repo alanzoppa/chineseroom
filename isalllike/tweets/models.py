@@ -33,10 +33,27 @@ REGEX_REPLACEMENTS = [
 
 api = TwitterAPI(**settings.TWITTER_AUTHENTICATION)
 
+
+def reconcile_old_style_source(source):
+    if source.startswith('document'):
+        document_title = source.split(':')[-1]
+        return {'document_id': Document.objects.get(name=document_title)}
+    elif source.endswith('@twitter'):
+        twitter_username = source.split('@')
+        twitter_user, created = TwitterUser.objects.get_or_create(twitter_id=twitter_username)
+        return {'twitter_user_id': twitter_user.id}
+
+
+
+
+class TwitterUser(models.Model):
+    twitter_id = models.CharField(max_length=255, unique=True)
+
 class Tweet(models.Model):
     message = models.TextField(blank=True, null=True)
     user = models.CharField(max_length=255,)
     twitter_id = models.CharField(max_length=255, unique=True)
+    twitter_user = models.ForeignKey('TwitterUser', null=True)
 
     def __str__(self):
         return self.user + ': ' + self.message
@@ -75,18 +92,23 @@ class Tweet(models.Model):
         except Tweet.DoesNotExist:
             pass
 
+        twitter_user, created = TwitterUser.objects.get_or_create(
+            twitter_id = username
+        )
+
         with transaction.atomic():
             for t in tweets:
                 Tweet.objects.get_or_create(
                     message=t['text'],
                     user=username,
+                    twitter_user = twitter_user,
                     twitter_id=t['id']
                 )
         return True
 
     @classmethod
     def gather_history_for(self, username):
-        NGram.objects.filter(source=username+"@twitter").delete()
+        NGram.objects.filter(twitter_user__twitter_id=username).delete()
         Tweet._gather_older_for_user(username)
 
         pool = Pool(processes=4)
@@ -112,7 +134,8 @@ class NGram(models.Model):
     tag_two = models.CharField(max_length=255, null=True)
     tag_three = models.CharField(max_length=255, null=True)
 
-    source = models.CharField(max_length=255,)
+    document = models.ForeignKey('Document', null=True)
+    twitter_user = models.ForeignKey('TwitterUser', null=True)
 
     sentence_starter = models.BooleanField(default=False)
     sentence_terminator = models.BooleanField(default=False)
@@ -137,6 +160,17 @@ class NGram(models.Model):
             'tag_two': three_parsed_tokens[1][1],
             'tag_three': three_parsed_tokens[2][1], 
         }
+
+        if kwargs['source'].startswith('document'):
+            document_title = kwargs['source'].split(':')[-1]
+            base['document_id'] = Document.objects.get(name=document_title).id
+        elif kwargs['source'].endswith('@twitter'):
+            twitter_username = kwargs['source'].split('@')
+            twitter_user, created = TwitterUser.objects.get_or_create(twitter_id=twitter_username)
+            base['twitter_user_id'] = twitter_user.id
+
+        del kwargs['source']
+
         base.update(kwargs)
         return base
 
@@ -164,7 +198,7 @@ class Document(models.Model):
 
     def rebuild_ngrams(self):
         source_name = 'document:'+self.name
-        NGram.objects.filter(source=source_name).delete()
+        NGram.objects.filter(document=self).delete()
         NGram.new_ngrams_from_parsed_sentences(
             Parser.document_parse(self.text),
             source_name
@@ -243,7 +277,8 @@ class NovelParagraph:
         self.sources = []
         for source, probability in args:
             self.source_probability[source] = probability
-            self.querysets[source] = NGram.objects.filter(source=source)
+            #self.querysets[source] = NGram.objects.filter(source=source)
+            self.querysets[source] = NGram.objects.filter(**reconcile_old_style_source(source))
             self.sources.append(source)
             if self.querysets[source].count() == 0:
                 raise InvalidSourceException("No NGrams with this source")

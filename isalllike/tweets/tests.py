@@ -101,17 +101,18 @@ class TwitterNGramTest(TransactionTestCase):
             sentence_terminator=False
         )
 
-        assert params == {
-            'tag_two': 'DT',
-            'sentence_starter': True,
-            'token_two': 'this',
-            'tag_one': '@+NN',
-            'token_one': '@herbert',
+        for key, value in {
             'tag_three': 'VBZ',
-            'source': 'c_alan_zoppa@twitter',
+            'tag_two': 'DT',
             'token_three': 'is',
-            'sentence_terminator': False
-        }
+            'token_two': 'this',
+            'sentence_starter': True,
+            'sentence_terminator': False,
+            'tag_one': '@+NN',
+            'token_one': '@herbert'
+        }.items():
+            assert params[key] == value
+        assert 'twitter_user_id' in params
 
     def test_ngramify_twitter_sentence(self):
         NGram.new_ngrams_from_parsed_sentences( [self.twitter_sentence],'c_alan_zoppa@twitter')
@@ -123,7 +124,6 @@ class TwitterNGramTest(TransactionTestCase):
         assert first.tag_one == '@+NN'
         assert first.tag_two == 'DT'
         assert first.tag_three == 'VBZ'
-        assert first.source == 'c_alan_zoppa@twitter'
 
 
 class EndToEndGatherTest(TransactionTestCase):
@@ -213,13 +213,13 @@ class DocumentTests(TransactionTestCase):
             name='arbitrary',
             text="This is just to test the signal."
         )
-        assert NGram.objects.filter(source='document:arbitrary').count() == 6
+        assert NGram.objects.filter(document__name='arbitrary').count() == 6
 
     def test_rebuild_ngrams(self):
         source_name = 'document:'+self.test_document.name
-        NGram.objects.filter(source=source_name).delete()
+        NGram.objects.filter(document__name=self.test_document.name).delete()
         self.test_document.rebuild_ngrams()
-        assert NGram.objects.filter(source=source_name).count() == 32
+        assert NGram.objects.filter(document__name=self.test_document.name).count() == 32
 
 
 class SentencePostprocessing(TransactionTestCase):
