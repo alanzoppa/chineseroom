@@ -39,7 +39,7 @@ def reconcile_old_style_source(source):
         document_title = source.split(':')[-1]
         return {'document_id': Document.objects.get(name=document_title)}
     elif source.endswith('@twitter'):
-        twitter_username = source.split('@')
+        twitter_username = source.split('@')[0]
         twitter_user, created = TwitterUser.objects.get_or_create(twitter_id=twitter_username)
         return {'twitter_user_id': twitter_user.id}
 
@@ -142,7 +142,7 @@ class NGram(models.Model):
 
     def __str__(self):
         return (
-            "<NGram {0.source}: ["
+            "<NGram : ["
             "({0.token_one}, {0.tag_one}), "
             "({0.token_two}, {0.tag_two}), "
             "({0.token_three}, {0.tag_three})"
@@ -165,7 +165,7 @@ class NGram(models.Model):
             document_title = kwargs['source'].split(':')[-1]
             base['document_id'] = Document.objects.get(name=document_title).id
         elif kwargs['source'].endswith('@twitter'):
-            twitter_username = kwargs['source'].split('@')
+            twitter_username = kwargs['source'].split('@')[0]
             twitter_user, created = TwitterUser.objects.get_or_create(twitter_id=twitter_username)
             base['twitter_user_id'] = twitter_user.id
 
@@ -301,14 +301,18 @@ class NovelParagraph:
     def _get_others(self, original):
         sources = self.sources.copy()
         sources.remove(original)
-        return [NGram.objects.filter(source=source) for source in sources]
+        return [NGram.objects.filter(**reconcile_old_style_source(source)) for source in sources]
 
     def new_word(self):
         queryset = self.pick_queryset()
         ordered_querysets = [queryset]
 
         if len(self.sources) > 1:
-            ordered_querysets = ordered_querysets + self._get_others(queryset.first().source)
+            if queryset.first().twitter_user:
+                source = queryset.first().twitter_user.twitter_id + '@twitter'
+            else:
+                source = 'document:'+queryset.first().document.name
+            ordered_querysets = ordered_querysets + self._get_others(source)
 
         for qs in ordered_querysets:
             new_word = self.new_word_from_queryset(qs)
