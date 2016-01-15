@@ -14,14 +14,14 @@
 
     <h3>Twitter Users</h3>
     {% for tu in twitter_users %}
-    <label for='source-{{tu.twitter_id}}@twitter'>{{tu.twitter_id}}@twitter</label>
+    <label for='source-{{tu.twitter_id}}@twitter'>{{tu.twitter_id}}</label>
         <span id='int-source-{{tu.twitter_id}}@twitter'></span>
         <input min='0' max='100' type='range' id='source-{{tu.twitter_id}}@twitter' name='source-{{tu.twitter_id}}@twitter' step='5' value='{{tu.ratio}}' class='source-slider' />
     {% endfor %}
 
     <h3>Documents</h3>
     {% for doc in documents%}
-    <label for='source-document:{{doc.name}}'>document:{{doc.name}}</label>
+    <label for='source-document:{{doc.name}}'>{{doc.name}}</label>
         <span id='int-source-document:{{doc.name}}'></span>
         <input min='0' max='100' type='range' id='source-document:{{doc.name}}' name='source-document:{{doc.name}}' step='5' value='{{doc.ratio}}' class='source-slider' />
     {% endfor %}

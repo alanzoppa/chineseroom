@@ -78,3 +78,8 @@ form.modal-entry .errorlist li {
 #create-run {
     width: 300px;
 }
+
+input[type=radio] {
+    margin-right: 3px;
+    margin-left: 3px;
+}
