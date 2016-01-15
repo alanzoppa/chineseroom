@@ -171,11 +171,10 @@ class NovelParagraphTests(TransactionTestCase):
         assert passed
             
 
-    #def test_compound(self):
-        #nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
-        #nov.append_sentence()
-        #nov.append_sentence()
-        #print(nov.human_readable_sentences())
+    def test_compound(self):
+        nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
+        nov.append_sentence()
+        nov.append_sentence()
 
 
 class DocumentTests(TransactionTestCase):
