@@ -18,10 +18,12 @@ def add_twitter_user(request):
 
 def index(request):
     context = {}
+    context['strategy'] = 'best'
     if request.method == 'POST':
         context.update(_get_sources(request.POST))
-        paragraph = NovelParagraph( *_extract_probabilities(request.POST) )
+        paragraph = NovelParagraph( *_extract_probabilities(request.POST), strategy=request.POST['strategy'])
         context['sentences'] = _generate_markov_string(paragraph)
+        context['strategy'] = request.POST['strategy']
     else:
         context.update(_get_sources())
 
@@ -61,6 +63,7 @@ def _get_sources(data={}):
 
 
 def _generate_markov_string(novel_paragraph):
+    novel_paragraph.append_sentence()
     novel_paragraph.append_sentence()
     novel_paragraph.append_sentence()
     return novel_paragraph.human_readable_sentences()

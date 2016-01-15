@@ -2,7 +2,6 @@
 
 {% block body %}
 
-<a href='/add-twitter-user'>Add Twitter User</a>
 <form action="/" method="post" id='create-run' class='modal-entry'>
     {% csrf_token %}
 
@@ -11,8 +10,8 @@
     {% endif %}
 
     <h3>Strategy</h3>
-    <input type='radio' name='strategy' value='best' checked='checked'>Best&nbsp;</input>
-    <input type='radio' name='strategy' value='grammar_only'>Grammary Only</input>
+    <input type='radio' name='strategy' value='best' {% ifequal strategy 'best' %}checked='checked'{% endifequal %}>Best&nbsp;</input>
+    <input type='radio' name='strategy' value='grammar_only'{% ifequal strategy 'grammar_only' %}checked='checked'{% endifequal %}>Grammary Only</input>
 
     <h3>Twitter Users</h3>
     {% for tu in twitter_users %}
@@ -31,4 +30,5 @@
 
     
 </form>
+<a href='/add-twitter-user'>Add Twitter User</a>
 {% endblock %}

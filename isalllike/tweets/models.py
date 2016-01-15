@@ -49,6 +49,9 @@ def reconcile_old_style_source(source):
 class TwitterUser(models.Model):
     twitter_id = models.CharField(max_length=255, unique=True)
 
+    def __str__(self):
+        return '<' + self.twitter_id + '>'
+
 class Tweet(models.Model):
     message = models.TextField(blank=True, null=True)
     user = models.CharField(max_length=255,)
@@ -269,7 +272,12 @@ class InvalidSourceException(Exception):
 
 
 class NovelParagraph:
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
+        if 'strategy' in kwargs:
+            self.strategy = kwargs['strategy']
+        else:
+            self.strategy = 'best'
+
         self.events = []
         self.sentences = []
         self.source_probability = {}
@@ -277,7 +285,6 @@ class NovelParagraph:
         self.sources = []
         for source, probability in args:
             self.source_probability[source] = probability
-            #self.querysets[source] = NGram.objects.filter(source=source)
             self.querysets[source] = NGram.objects.filter(**reconcile_old_style_source(source))
             self.sources.append(source)
             if self.querysets[source].count() == 0:
@@ -287,14 +294,14 @@ class NovelParagraph:
     def pick_queryset(self):
         return self.querysets[self.source_probability.generate()]
 
-    def append_sentence(self, strategy='best'):
+    def append_sentence(self):
         self.current_sentence = []
         starter = self.pick_queryset().filter(sentence_starter=True).order_by('?').first()
         self.current_sentence.append((starter.token_one, starter.tag_one))
         self.current_sentence.append((starter.token_two, starter.tag_two))
         self.current_sentence.append((starter.token_three, starter.tag_three))
         while self.current_sentence[-1][0] not in ['.', '!', '?']:
-            new_word = self.new_word(strategy)
+            new_word = self.new_word()
             self.current_sentence.append(new_word)
         self.sentences.append(self.current_sentence)
 
@@ -303,7 +310,7 @@ class NovelParagraph:
         sources.remove(original)
         return [NGram.objects.filter(**reconcile_old_style_source(source)) for source in sources]
 
-    def new_word(self, strategy='best'):
+    def new_word(self):
         queryset = self.pick_queryset()
         ordered_querysets = [queryset]
 
@@ -315,13 +322,13 @@ class NovelParagraph:
             ordered_querysets = ordered_querysets + self._get_others(source)
 
         for qs in ordered_querysets:
-            new_word = self.new_word_from_queryset(qs, strategy)
+            new_word = self.new_word_from_queryset(qs)
             if new_word:
                 return new_word
         return '.'
 
-    def _best_matching_word(self, queryset, strategy='best'):
-        if strategy == 'grammar_only':
+    def _best_matching_word(self, queryset):
+        if self.strategy == 'grammar_only':
             return queryset.filter(
                 tag_one=self.current_sentence[-2][1],
                 tag_two=self.current_sentence[-1][1],
@@ -340,8 +347,8 @@ class NovelParagraph:
                 ).order_by('?').first()
             return nxt
 
-    def new_word_from_queryset(self, queryset, strategy='best'):
-        nxt = self._best_matching_word(queryset, strategy=strategy)
+    def new_word_from_queryset(self, queryset):
+        nxt = self._best_matching_word(queryset)
         if nxt:
             return (nxt.token_three, nxt.tag_three)
         else:

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<form action="/add-twitter-user/" method="post" id='add-twitter-user' class='modal-entry'>
+    {% csrf_token %}
+    <input type='text' name='username' value=''/>
+    <input type="submit" value="Add" id='submit-twitter-user' />
+</form>
+{% endblock %}

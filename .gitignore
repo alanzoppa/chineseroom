@@ -1,2 +1,3 @@
 *.pyc
 isalllike/private_settings.py
+*.txt
