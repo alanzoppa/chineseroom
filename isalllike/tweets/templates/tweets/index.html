@@ -10,10 +10,16 @@
 
     <div id='totals'></div>
     
-    {% for source in sources %}
-        <label for='source-{{source}}'>{{source}}</label>
-        <span id='int-source-{{source}}'></span>
-        <input min='0' max='100' type='range' id='source-{{source}}' name='source-{{source}}' step='5' value='0' class='source-slider' />
+    {% for tu in twitter_users %}
+    <label for='source-{{tu.twitter_id}}@twitter'>{{tu.twitter_id}}@twitter</label>
+        <span id='int-source-{{tu.twitter_id}}@twitter'></span>
+        <input min='0' max='100' type='range' id='source-{{tu.twitter_id}}@twitter' name='source-{{tu.twitter_id}}@twitter' step='5' value='0' class='source-slider' />
+    {% endfor %}
+
+    {% for doc in documents%}
+    <label for='source-document:{{doc.name}}'>document:{{doc.name}}</label>
+        <span id='int-source-document:{{doc.name}}'></span>
+        <input min='0' max='100' type='range' id='source-document:{{doc.name}}' name='source-document:{{doc.name}}' step='5' value='0' class='source-slider' />
     {% endfor %}
     <input type="submit" value="Submit" disabled='disabled' id='submit-run' />
 

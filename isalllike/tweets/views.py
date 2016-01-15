@@ -1,12 +1,13 @@
 from django.shortcuts import render
-from isalllike.tweets.models import NGram, NovelParagraph
+from isalllike.tweets.models import NGram, NovelParagraph, TwitterUser, Document
 import ipdb
 
 # Create your views here.
 
 def index(request):
     context = {
-        'sources': [n.source for n in NGram.objects.all().distinct('source')],
+        'documents': Document.objects.all(),
+        'twitter_users': TwitterUser.objects.all()
     }
     if request.method == 'POST':
         paragraph = NovelParagraph( *_extract_probabilities(request.POST) )
