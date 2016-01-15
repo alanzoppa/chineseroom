@@ -1,8 +1,20 @@
-from django.shortcuts import render
-from isalllike.tweets.models import NGram, NovelParagraph, TwitterUser, Document
+from django.shortcuts import render, redirect
+from isalllike.tweets.models import NGram, NovelParagraph, TwitterUser, Document, Tweet
 import ipdb
 
 # Create your views here.
+
+def add_twitter_user(request):
+    context = {}
+    if request.method == "POST":
+        Tweet.gather_history_for(request.POST['username'])
+        return redirect('/')
+    return render(
+        request=request,
+        template_name='tweets/add_twitter_user.html',
+        context=context,
+    )
+ 
 
 def index(request):
     context = {}
