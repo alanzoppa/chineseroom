@@ -23,7 +23,7 @@ NO_LEADING_SPACE_TOKENS = [
     "'ll", "'m", "'ve", "'re",
 ]
 
-NO_TRAILING_SPACE_TOKENS = ['(', '@', ]
+NO_TRAILING_SPACE_TOKENS = ['(', '@', '$']
 
 UNUSABLE_TOKENS = ['``', '"']
 
@@ -287,14 +287,14 @@ class NovelParagraph:
     def pick_queryset(self):
         return self.querysets[self.source_probability.generate()]
 
-    def append_sentence(self):
+    def append_sentence(self, strategy='best'):
         self.current_sentence = []
         starter = self.pick_queryset().filter(sentence_starter=True).order_by('?').first()
         self.current_sentence.append((starter.token_one, starter.tag_one))
         self.current_sentence.append((starter.token_two, starter.tag_two))
         self.current_sentence.append((starter.token_three, starter.tag_three))
         while self.current_sentence[-1][0] not in ['.', '!', '?']:
-            new_word = self.new_word()
+            new_word = self.new_word(strategy)
             self.current_sentence.append(new_word)
         self.sentences.append(self.current_sentence)
 
@@ -303,7 +303,7 @@ class NovelParagraph:
         sources.remove(original)
         return [NGram.objects.filter(**reconcile_old_style_source(source)) for source in sources]
 
-    def new_word(self):
+    def new_word(self, strategy='best'):
         queryset = self.pick_queryset()
         ordered_querysets = [queryset]
 
@@ -315,16 +315,33 @@ class NovelParagraph:
             ordered_querysets = ordered_querysets + self._get_others(source)
 
         for qs in ordered_querysets:
-            new_word = self.new_word_from_queryset(qs)
+            new_word = self.new_word_from_queryset(qs, strategy)
             if new_word:
                 return new_word
         return '.'
 
-    def new_word_from_queryset(self, queryset):
-        nxt = queryset.filter(
-            token_one__iexact=self.current_sentence[-2][0],
-            token_two__iexact=self.current_sentence[-1][0],
-        ).order_by('?').first()
+    def _best_matching_word(self, queryset, strategy='best'):
+        if strategy == 'grammar_only':
+            return queryset.filter(
+                tag_one=self.current_sentence[-2][1],
+                tag_two=self.current_sentence[-1][1],
+            ).order_by('?').first()
+        else:
+            nxt = queryset.filter(
+                token_one__iexact=self.current_sentence[-2][0],
+                token_two__iexact=self.current_sentence[-1][0],
+                tag_one=self.current_sentence[-2][1],
+                tag_two=self.current_sentence[-1][1],
+            ).order_by('?').first()
+            if not nxt:
+                nxt = queryset.filter(
+                    token_one__iexact=self.current_sentence[-2][0],
+                    token_two__iexact=self.current_sentence[-1][0],
+                ).order_by('?').first()
+            return nxt
+
+    def new_word_from_queryset(self, queryset, strategy='best'):
+        nxt = self._best_matching_word(queryset, strategy=strategy)
         if nxt:
             return (nxt.token_three, nxt.tag_three)
         else:
