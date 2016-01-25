@@ -29,6 +29,7 @@ UNUSABLE_TOKENS = ['``', '"']
 
 REGEX_REPLACEMENTS = [
     (re.compile(r'(https?:) '), '\\1'),
+    (re.compile(r'\& amp;'), '&'),
 ]
 
 api = TwitterAPI(**settings.TWITTER_AUTHENTICATION)

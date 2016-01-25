@@ -63,7 +63,6 @@ def _get_sources(data={}):
 
 
 def _generate_markov_string(novel_paragraph):
-    novel_paragraph.append_sentence()
-    novel_paragraph.append_sentence()
-    novel_paragraph.append_sentence()
+    while len(novel_paragraph.human_readable_sentences()) < 120:
+        novel_paragraph.append_sentence()
     return novel_paragraph.human_readable_sentences()
