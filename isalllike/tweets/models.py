@@ -20,12 +20,19 @@ from TwitterAPI import TwitterAPI
 
 NO_LEADING_SPACE_TOKENS = [
     '.', ',', '!', '?', ':', ';', '"', "'", "n't", "'d", "'s", ')',
-    "'ll", "'m", "'ve", "'re",
+    "'ll", "'m", "'ve", "'re", "''"
 ]
 
-NO_TRAILING_SPACE_TOKENS = ['(', '@', '$']
+TERMINAL_PUNCTUATION = ['.', '!', '?']
 
-UNUSABLE_TOKENS = ['``', '"']
+NO_TRAILING_SPACE_TOKENS = ['(', '@', '$', '``']
+
+#UNUSABLE_TOKENS = ['``',]
+
+SYMMETRICAL_TOKENS = {
+    '``': "''",
+    '(': ")",
+}
 
 REGEX_REPLACEMENTS = [
     (re.compile(r'(https?:) '), '\\1'),
@@ -284,6 +291,7 @@ class NovelParagraph:
         self.source_probability = {}
         self.querysets = {}
         self.sources = []
+        self.symmetrical_tokens = []
         for source, probability in args:
             self.source_probability[source] = probability
             self.querysets[source] = NGram.objects.filter(**reconcile_old_style_source(source))
@@ -301,7 +309,7 @@ class NovelParagraph:
         self.current_sentence.append((starter.token_one, starter.tag_one))
         self.current_sentence.append((starter.token_two, starter.tag_two))
         self.current_sentence.append((starter.token_three, starter.tag_three))
-        while self.current_sentence[-1][0] not in ['.', '!', '?']:
+        while self.current_sentence[-1][0] not in TERMINAL_PUNCTUATION:
             new_word = self.new_word()
             self.current_sentence.append(new_word)
         self.sentences.append(self.current_sentence)
@@ -310,6 +318,12 @@ class NovelParagraph:
         sources = self.sources.copy()
         sources.remove(original)
         return [NGram.objects.filter(**reconcile_old_style_source(source)) for source in sources]
+
+    def _account_for_symmetrical_tokens(self, token):
+        if token in SYMMETRICAL_TOKENS:
+            self.symmetrical_tokens.append(
+                ( SYMMETRICAL_TOKENS[token], SYMMETRICAL_TOKENS[token] )
+            )
 
     def new_word(self):
         queryset = self.pick_queryset()
@@ -325,8 +339,16 @@ class NovelParagraph:
         for qs in ordered_querysets:
             new_word = self.new_word_from_queryset(qs)
             if new_word:
+                self._account_for_symmetrical_tokens(new_word[0])
+                if new_word[0] in TERMINAL_PUNCTUATION:
+                    if len(self.symmetrical_tokens) > 0:
+                        return self.symmetrical_tokens.pop()
                 return new_word
-        return '.'
+
+        if len(self.symmetrical_tokens) > 0:
+            return self.symmetrical_tokens.pop()
+
+        return ('.', '.')
 
     def _best_matching_word(self, queryset):
         if self.strategy == 'grammar_only':
@@ -382,18 +404,18 @@ class NovelParagraph:
             text = re.sub(pattern, replacement, text) 
         return text 
     
-    @classmethod
-    def _usable_token(self, token):
-        return token not in UNUSABLE_TOKENS
+    #@classmethod
+    #def _usable_token(self, token):
+        #return token not in UNUSABLE_TOKENS
 
     def human_readable_sentences(self):
         final_output = []
         for sent in self.sentences:
             output = []
             for i, token in enumerate(sent):
-                if NovelParagraph._usable_token(token[0]):
-                    if NovelParagraph._needs_space(token[0], sent[i-1][0], i):
-                        output.append(' ')
-                    output.append(token[0])
+                #if NovelParagraph._usable_token(token[0]):
+                if NovelParagraph._needs_space(token[0], sent[i-1][0], i):
+                    output.append(' ')
+                output.append(token[0])
             final_output.append(output)
         return NovelParagraph._join_and_postprocess_sentences(final_output)

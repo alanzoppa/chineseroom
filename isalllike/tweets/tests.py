@@ -225,7 +225,7 @@ class SentencePostprocessing(TransactionTestCase):
 
     def setUp(self):
         example = (
-            "@joe `` has an \" example! Take a look; it's at "
+            "@joe has an example! Take a look; it's at "
             "http://www.example.com. Hurry, or you'll miss it."
         )
 
@@ -243,6 +243,21 @@ class SentencePostprocessing(TransactionTestCase):
             "Hurry, or you'll miss it."
         ]:
             assert i in humanized
+
+
+class ReckonSymmetricalTokens(TransactionTestCase):
+    def setUp(self):
+        example = 'Single path with "only one (quotation mark.'
+        sentence = Parser.twitter_parse(example)
+        NGram.new_ngrams_from_parsed_sentences(sentence, 'fake_user@twitter')   
+
+    def test_quotations(self):
+        nov = NovelParagraph(('fake_user@twitter', 1))
+        #for i in range(0,10):
+        nov.append_sentence()
+        humanized = nov.human_readable_sentences()
+        assert humanized == "Single path with ``only one (quotation mark)''."
+
 
     #def test_reckon_quotations(self):
         #sentences = [
