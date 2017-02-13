@@ -137,12 +137,12 @@ class Tweet(models.Model):
 
 
 class NGram(models.Model):
-    token_one = models.CharField(max_length=255,)
-    token_two = models.CharField(max_length=255, null=True)
+    token_one = models.CharField(max_length=255, db_index=True)
+    token_two = models.CharField(max_length=255, null=True, db_index=True)
     token_three = models.CharField(max_length=255, null=True)
 
-    tag_one = models.CharField(max_length=255,)
-    tag_two = models.CharField(max_length=255, null=True)
+    tag_one = models.CharField(max_length=255, db_index=True)
+    tag_two = models.CharField(max_length=255, null=True, db_index=True)
     tag_three = models.CharField(max_length=255, null=True)
 
     document = models.ForeignKey('Document', null=True)
@@ -386,15 +386,6 @@ class NovelParagraph:
         if token in NO_LEADING_SPACE_TOKENS:
             return False
         return True
-
-    #@classmethod
-    #def _reckon_quotations(self, sentences):
-        #for i, sentence in enumerate(sentences):
-            #if i == 0:
-                #continue
-            #if sentence[0] == sentence[0].lower():
-                #senvk
-
     
     @classmethod
     def _join_and_postprocess_sentences(self, sentences):
@@ -404,10 +395,6 @@ class NovelParagraph:
             text = re.sub(pattern, replacement, text) 
         return text 
     
-    #@classmethod
-    #def _usable_token(self, token):
-        #return token not in UNUSABLE_TOKENS
-
     def human_readable_sentences(self):
         final_output = []
         for sent in self.sentences:
