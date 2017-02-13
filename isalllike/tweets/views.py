@@ -2,8 +2,6 @@ from django.shortcuts import render, redirect
 from isalllike.tweets.models import NGram, NovelParagraph, TwitterUser, Document, Tweet
 import ipdb
 
-# Create your views here.
-
 def add_twitter_user(request):
     context = {}
     if request.method == "POST":
@@ -21,7 +19,10 @@ def index(request):
     context['strategy'] = 'best'
     if request.method == 'POST':
         context.update(_get_sources(request.POST))
-        paragraph = NovelParagraph( *_extract_probabilities(request.POST), strategy=request.POST['strategy'])
+        paragraph = NovelParagraph(
+            *_extract_probabilities(request.POST),
+            strategy=request.POST['strategy']
+        )
         context['sentences'] = _generate_markov_string(paragraph)
         context['strategy'] = request.POST['strategy']
     else:

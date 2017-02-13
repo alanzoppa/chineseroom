@@ -115,7 +115,10 @@ class TwitterNGramTest(TransactionTestCase):
         assert 'twitter_user_id' in params
 
     def test_ngramify_twitter_sentence(self):
-        NGram.new_ngrams_from_parsed_sentences( [self.twitter_sentence],'c_alan_zoppa@twitter')
+        NGram.new_ngrams_from_parsed_sentences( 
+            [self.twitter_sentence],
+            'c_alan_zoppa@twitter'
+        )
         first = NGram.objects.first()
         assert NGram.objects.count() == 5
         assert first.token_one == '@herbert'
@@ -172,7 +175,10 @@ class NovelParagraphTests(TransactionTestCase):
             
 
     def test_compound(self):
-        nov = NovelParagraph(('fake_user@twitter', .5), ('hd_thoreau@twitter', .5))
+        nov = NovelParagraph(
+            ('fake_user@twitter', .5),
+            ('hd_thoreau@twitter', .5)
+        )
         nov.append_sentence()
         nov.append_sentence()
 
@@ -218,7 +224,9 @@ class DocumentTests(TransactionTestCase):
         source_name = 'document:'+self.test_document.name
         NGram.objects.filter(document__name=self.test_document.name).delete()
         self.test_document.rebuild_ngrams()
-        assert NGram.objects.filter(document__name=self.test_document.name).count() == 32
+        assert NGram.objects.filter(
+            document__name=self.test_document.name
+        ).count() == 32
 
 
 class SentencePostprocessing(TransactionTestCase):
@@ -253,21 +261,9 @@ class ReckonSymmetricalTokens(TransactionTestCase):
 
     def test_quotations(self):
         nov = NovelParagraph(('fake_user@twitter', 1))
-        #for i in range(0,10):
         nov.append_sentence()
         humanized = nov.human_readable_sentences()
         assert humanized == "Single path with ``only one (quotation mark)''."
-
-
-    #def test_reckon_quotations(self):
-        #sentences = [
-            #"I've had enough.",
-            #"said the actress to the bishop."
-        #]
-        #paragraph = Parser.twitter_parse(sentences)
-        #print(paragraph)
-        #NovelParagraph._reckon_quotations(sentences)
-
 
 
 class ViewTests(TransactionTestCase):

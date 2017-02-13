@@ -48,7 +48,9 @@ def reconcile_old_style_source(source):
         return {'document_id': Document.objects.get(name=document_title)}
     elif source.endswith('@twitter'):
         twitter_username = source.split('@')[0]
-        twitter_user, created = TwitterUser.objects.get_or_create(twitter_id=twitter_username)
+        twitter_user, created = TwitterUser.objects.get_or_create(
+            twitter_id=twitter_username
+        )
         return {'twitter_user_id': twitter_user.id}
 
 
@@ -177,7 +179,9 @@ class NGram(models.Model):
             base['document_id'] = Document.objects.get(name=document_title).id
         elif kwargs['source'].endswith('@twitter'):
             twitter_username = kwargs['source'].split('@')[0]
-            twitter_user, created = TwitterUser.objects.get_or_create(twitter_id=twitter_username)
+            twitter_user, created = TwitterUser.objects.get_or_create(
+                twitter_id=twitter_username
+            )
             base['twitter_user_id'] = twitter_user.id
 
         del kwargs['source']
@@ -294,7 +298,9 @@ class NovelParagraph:
         self.symmetrical_tokens = []
         for source, probability in args:
             self.source_probability[source] = probability
-            self.querysets[source] = NGram.objects.filter(**reconcile_old_style_source(source))
+            self.querysets[source] = NGram.objects.filter(
+                **reconcile_old_style_source(source)
+            )
             self.sources.append(source)
             if self.querysets[source].count() == 0:
                 raise InvalidSourceException("No NGrams with this source")
@@ -305,7 +311,9 @@ class NovelParagraph:
 
     def append_sentence(self):
         self.current_sentence = []
-        starter = self.pick_queryset().filter(sentence_starter=True).order_by('?').first()
+        starter = self.pick_queryset().filter(
+            sentence_starter=True
+        ).order_by('?').first()
         self.current_sentence.append((starter.token_one, starter.tag_one))
         self.current_sentence.append((starter.token_two, starter.tag_two))
         self.current_sentence.append((starter.token_three, starter.tag_three))
@@ -317,7 +325,11 @@ class NovelParagraph:
     def _get_others(self, original):
         sources = self.sources.copy()
         sources.remove(original)
-        return [NGram.objects.filter(**reconcile_old_style_source(source)) for source in sources]
+        return [
+            NGram.objects.filter(
+                **reconcile_old_style_source(source)
+            ) for source in sources
+        ]
 
     def _account_for_symmetrical_tokens(self, token):
         if token in SYMMETRICAL_TOKENS:
@@ -400,7 +412,6 @@ class NovelParagraph:
         for sent in self.sentences:
             output = []
             for i, token in enumerate(sent):
-                #if NovelParagraph._usable_token(token[0]):
                 if NovelParagraph._needs_space(token[0], sent[i-1][0], i):
                     output.append(' ')
                 output.append(token[0])
