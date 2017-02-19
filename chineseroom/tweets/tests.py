@@ -2,7 +2,7 @@ from django.test import TestCase, TransactionTestCase, SimpleTestCase
 import vcr
 from .models import Tweet, NGram, Parser, NovelParagraph, Document
 from .models import InvalidSourceException
-from isalllike.tweets import views
+from chineseroom.tweets import views
 from django.http import QueryDict
 
 import ipdb

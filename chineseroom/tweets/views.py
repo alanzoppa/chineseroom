@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from isalllike.tweets.models import NGram, NovelParagraph, TwitterUser, Document, Tweet
+from chineseroom.tweets.models import NGram, NovelParagraph, TwitterUser, Document, Tweet
 import ipdb
 
 def add_twitter_user(request):
